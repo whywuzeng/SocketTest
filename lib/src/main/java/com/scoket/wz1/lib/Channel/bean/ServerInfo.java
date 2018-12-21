@@ -13,4 +13,23 @@ public class ServerInfo {
     //port
     //address
 
+    public int port;
+
+    public ServerInfo(int port, String address, String sn) {
+        this.port = port;
+        this.address = address;
+        this.sn = sn;
+    }
+
+    @Override
+    public String toString() {
+        return "ServerInfo{" +
+                "port=" + port +
+                ", address='" + address + '\'' +
+                ", sn='" + sn + '\'' +
+                '}';
+    }
+
+    public String address;
+    public String sn;
 }
