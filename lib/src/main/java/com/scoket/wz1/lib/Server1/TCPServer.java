@@ -83,7 +83,7 @@ public class TCPServer {
                     ClientHandler clientHandler = new ClientHandler(client, new CloseNotify() {
                         @Override
                         public void onSelfClosed(ClientHandler handler) {
-                            handler.exitbySelf();
+                            handler.exit();
                             handlerList.remove(handler);
                         }
                     });
@@ -93,6 +93,12 @@ public class TCPServer {
                     handlerList.add(clientHandler);
                 } catch (IOException e) {
                     e.printStackTrace();
+                    done=true;
+                    for (ClientHandler clientHandler : handlerList) {
+                        clientHandler.exit();
+                    }
+                }finally {
+
                 }
             }
 

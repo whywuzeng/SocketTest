@@ -148,6 +148,9 @@ public class UDPSearcher {
 
             } catch (java.io.IOException e) {
                 e.printStackTrace();
+                done=true;
+            }finally {
+
             }
         }
 

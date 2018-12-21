@@ -103,6 +103,7 @@ public class UDPProvider {
 
                 } catch (IOException e) {
                     e.printStackTrace();
+                    done=true;
                 }finally {
 
                 }

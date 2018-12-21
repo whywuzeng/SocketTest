@@ -97,13 +97,20 @@ public class ClientHandler {
                 try {
                     str = bufferedReader.readLine();
 
+                    if (str==null)
+                    {
+                        System.out.println("客户端已无法读取数据！");
+                        ClientHandler.this.exitbySelf();
+                        break;
+                    }
+
                 } catch (IOException e) {
                     e.printStackTrace();
                     System.out.println("客户端"+socket.getLocalAddress()+"出现问题..");
                 }
 
                 //打印到屏幕
-                System.out.println(str);
+                System.out.println("打印到屏幕"+str);
             }while (!done);
 
         }
