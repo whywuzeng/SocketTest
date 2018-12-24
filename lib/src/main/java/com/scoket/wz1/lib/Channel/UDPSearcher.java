@@ -150,7 +150,7 @@ public class UDPSearcher {
                 e.printStackTrace();
                 done=true;
             }finally {
-
+                close();
             }
         }
 

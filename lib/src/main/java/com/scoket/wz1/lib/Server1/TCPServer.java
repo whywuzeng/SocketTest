@@ -8,6 +8,8 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * Created by Administrator on 2018-12-21.
@@ -18,12 +20,19 @@ import java.util.List;
  */
 public class TCPServer {
 
+    private final int mPort;
+    private final ExecutorService executorService;
     private ClientListener clientListener = null;
 
-    public boolean start(int port){
+    public TCPServer(int port) {
+        this.mPort=port;
+        executorService = Executors.newSingleThreadExecutor();
+    }
+
+    public boolean start(){
         //初始化 clientListener  线程
         try {
-            clientListener = new ClientListener(port);
+            clientListener = new ClientListener(mPort);
             clientListener.start();
         } catch (IOException e) {
             e.printStackTrace();
@@ -32,7 +41,7 @@ public class TCPServer {
         return true;
     }
 
-    public void send(String msg)
+    public synchronized void send(String msg)
     {
         if (clientListener!=null)
         {
@@ -48,13 +57,17 @@ public class TCPServer {
         {
             clientListener.exit();
             List<ClientHandler> list = clientListener.getList();
-            for (ClientHandler clientHandler : list) {
-                clientHandler.exitbySelf();
+            synchronized (TCPServer.this) {
+                for (ClientHandler clientHandler : list) {
+                    clientHandler.exitbySelf();
+                }
             }
+            list.clear();
         }
+        executorService.shutdown();
     }
 
-    private class ClientListener extends Thread{
+    private class ClientListener extends Thread implements CloseNotify {
 
         private final int port;
         private final ServerSocket mServerSocket;
@@ -73,33 +86,34 @@ public class TCPServer {
             Socket client;
             //无限循环
             while (!done){
-                try {
-                    client= mServerSocket.accept();
+
+
+
+                 try {
+                     client= mServerSocket.accept();
+                 }catch (IOException e)
+                 {
+                    continue;
+                 }
                     //得到socket
 
                     //获取accept
+                try {
 
                     //客户端 ClientHandler 线程
-                    ClientHandler clientHandler = new ClientHandler(client, new CloseNotify() {
-                        @Override
-                        public void onSelfClosed(ClientHandler handler) {
-                            handler.exit();
-                            handlerList.remove(handler);
-                        }
-                    });
+                    ClientHandler clientHandler = new ClientHandler(client, this);
 
                     //读取数据并打印
                     clientHandler.readtoPrint();
-                    handlerList.add(clientHandler);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                    done=true;
-                    for (ClientHandler clientHandler : handlerList) {
-                        clientHandler.exit();
+                    synchronized (TCPServer.this) {
+                        handlerList.add(clientHandler);
                     }
-                }finally {
 
+                }catch (IOException e)
+                {
+                    System.out.println("服务端读写socket出现异常");
                 }
+
             }
 
         }
@@ -119,6 +133,31 @@ public class TCPServer {
 
         List<ClientHandler> getList(){
             return handlerList;
+        }
+
+        @Override
+        public synchronized void onSelfClosed(ClientHandler handler) {
+            handlerList.remove(handler);
+        }
+
+        @Override
+        public void onNewMessageArrived(final ClientHandler handler, final String msg) {
+            System.out.println("recevie"+handler.getClientInfo()+"信息为:"+msg);
+            executorService.execute(new Runnable() {
+                @Override
+                public void run() {
+                    synchronized (TCPServer.this)
+                    {
+                        for (ClientHandler clientHandler : handlerList) {
+                            if (clientHandler.equals(handler))
+                            {
+                                continue;
+                            }
+                            clientHandler.send(msg);
+                        }
+                    }
+                }
+            });
         }
     }
 }

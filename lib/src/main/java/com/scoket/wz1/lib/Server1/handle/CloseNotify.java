@@ -10,4 +10,6 @@ package com.scoket.wz1.lib.Server1.handle;
 public interface CloseNotify {
 
     void onSelfClosed(ClientHandler handler);
+
+    void onNewMessageArrived(ClientHandler handler,String msg);
 }

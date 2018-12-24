@@ -7,7 +7,7 @@ import java.io.IOException;
 /**
  * Created by Administrator on 2018-12-20.
  * <p>
- * by author wz
+ * by author wz com.scoket.wz1.lib.Channel.Client
  * <p>
  * com.scoket.wz1.lib.Channel
  */
@@ -27,7 +27,14 @@ public class Client {
 
         //TCP 连接serverinfo
         if (serverInfo!=null) {
-            TCPClient.linkwith(serverInfo);
+
+            try {
+                TCPClient.linkwith(serverInfo);
+            } catch (IOException e) {
+                e.printStackTrace();
+                System.out.println("客户端socket连接出现异常");
+            }
+
         }else {
             System.out.println("没搜索到服务设备");
         }

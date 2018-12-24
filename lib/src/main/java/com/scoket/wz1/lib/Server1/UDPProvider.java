@@ -52,10 +52,12 @@ public class UDPProvider {
         @Override
         public void run() {
             super.run();
+
+            try {
+            datagramSocket = new DatagramSocket(UDPConstants.PORT_SERVER);
+            datagramPacket = new DatagramPacket(buffer, buffer.length);
             while (!done) {
-                try {
-                    datagramSocket = new DatagramSocket(UDPConstants.PORT_SERVER);
-                    datagramPacket = new DatagramPacket(buffer, buffer.length);
+
 
                     datagramSocket.receive(datagramPacket);
 
@@ -100,15 +102,15 @@ public class UDPProvider {
                     }else {
                         System.out.println("UDPProvider receive cmd nonsupport; cmd:" + cmd + "\tport:" + port);
                     }
+            }
 
                 } catch (IOException e) {
                     e.printStackTrace();
                     done=true;
                 }finally {
-
+                    close();
                 }
 
-            }
         }
 
         private void close(){

@@ -1,5 +1,7 @@
 package com.scoket.wz1.lib.Server1.handle;
 
+import com.scoket.wz1.lib.clink.net.qiujuer.clink.utils.CloseUtils;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -28,10 +30,16 @@ public class ClientHandler {
     private final InetAddress localAddress;
     private final int port;
 
+    public String getClientInfo() {
+        return clientInfo;
+    }
+
+    private final String clientInfo;
+
     public ClientHandler(Socket socket, CloseNotify closeNotify) throws IOException {
 
         //socket 读流程
-        clientReadHandler = new ClientReadHandler(socket);
+        clientReadHandler = new ClientReadHandler(socket.getInputStream());
         //socket写流程
         writeHandle = new ClientWriteHandle(socket.getOutputStream());
         //反馈线程
@@ -42,6 +50,8 @@ public class ClientHandler {
         port = socket.getPort();
         //新用户信息
         System.out.println("新客户端"+socket.getLocalAddress()+socket.getPort()+"进行接入了");
+        this.clientInfo="A[" + socket.getInetAddress().getHostAddress()
+                + "] P[" + socket.getPort() + "]";
 
     }
 
@@ -77,41 +87,43 @@ public class ClientHandler {
     class ClientReadHandler extends Thread{
 
         private final InputStream inputStream;
-        private final Socket socket;
         private boolean done =false;
         private BufferedReader bufferedReader;
 
-        public ClientReadHandler(Socket socket) throws IOException {
-            inputStream = socket.getInputStream();
-            this.socket = socket;
+        public ClientReadHandler(InputStream inputStream) throws IOException {
+            this.inputStream = inputStream;
         }
 
         @Override
         public void run() {
             super.run();
-            do {
+            try {
                 //得到输入流  客户端拿到一条数据 接收数据
                 bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
                 //接收一行数据
-                String str = null;
-                try {
-                    str = bufferedReader.readLine();
+                do {
+                        String str = bufferedReader.readLine();
 
-                    if (str==null)
-                    {
+                    if (str == null) {
                         System.out.println("客户端已无法读取数据！");
                         ClientHandler.this.exitbySelf();
                         break;
                     }
 
-                } catch (IOException e) {
-                    e.printStackTrace();
-                    System.out.println("客户端"+socket.getLocalAddress()+"出现问题..");
-                }
+                    closeNotify.onNewMessageArrived(ClientHandler.this,str);
+                } while (!done);
 
-                //打印到屏幕
-                System.out.println("打印到屏幕"+str);
-            }while (!done);
+            } catch (IOException e) {
+                e.printStackTrace();
+                System.out.println("客户端" + socket.getLocalAddress() + "出现问题..");
+                if (!done)
+                {
+                    ClientHandler.this.exitbySelf();
+                }
+            }finally {
+                CloseUtils.close(inputStream);
+            }
+
 
         }
 

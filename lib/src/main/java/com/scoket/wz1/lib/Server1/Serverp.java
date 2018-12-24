@@ -19,9 +19,9 @@ public class Serverp {
     public static void main(String[] args )
     {
         //启动TCPserver
-        TCPServer tcpServer = new TCPServer();
+        TCPServer tcpServer = new TCPServer(TCPConstants.TCP_PORT_SERVER);
         //自己server 的端口
-        boolean start = tcpServer.start(TCPConstants.TCP_PORT_SERVER);
+        boolean start = tcpServer.start();
         //是否启动成功
         if (start)
         {
