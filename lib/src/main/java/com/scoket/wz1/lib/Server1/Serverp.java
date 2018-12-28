@@ -1,6 +1,8 @@
 package com.scoket.wz1.lib.Server1;
 
 import com.scoket.wz1.lib.Channel.constants.TCPConstants;
+import com.scoket.wz1.lib.clink.net.qiujuer.clink.Impl.IoSelectProvider;
+import com.scoket.wz1.lib.clink.net.qiujuer.clink.core.IoContext;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -18,6 +20,13 @@ public class Serverp {
 
     public static void main(String[] args )
     {
+
+        try {
+            new IoContext.Build().setIoProvider(new IoSelectProvider()).build();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
         //启动TCPserver
         TCPServer tcpServer = new TCPServer(TCPConstants.TCP_PORT_SERVER);
         //自己server 的端口

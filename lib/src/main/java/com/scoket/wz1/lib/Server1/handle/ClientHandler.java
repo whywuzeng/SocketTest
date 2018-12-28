@@ -1,5 +1,6 @@
 package com.scoket.wz1.lib.Server1.handle;
 
+import com.scoket.wz1.lib.clink.net.qiujuer.clink.core.Connector;
 import com.scoket.wz1.lib.clink.net.qiujuer.clink.utils.CloseUtils;
 
 import java.io.IOException;
@@ -23,8 +24,8 @@ public class ClientHandler {
 
     private final CloseNotify closeNotify;
     private final ClientWriteHandle writeHandle;
-    private final ClientReadHandler clientReadHandler;
     private final SocketChannel socket;
+    private final Connector connector;
 
     public String getClientInfo() {
         return clientInfo;
@@ -32,21 +33,31 @@ public class ClientHandler {
 
     private final String clientInfo;
 
-    public ClientHandler(SocketChannel socket, CloseNotify closeNotify) throws IOException {
+    public ClientHandler(SocketChannel socket, final CloseNotify closeNotify) throws IOException {
 
         //拿到 socketChannel 客户端   上级服务端是 serversocketChannel通道
         this.socket=socket;
         //socket非阻塞通道
-        socket.configureBlocking(false);
+
+         connector = new Connector() {
+            @Override
+            public boolean receiveNewMessage(String s) {
+                closeNotify.onNewMessageArrived(ClientHandler.this,s);
+                return super.receiveNewMessage(s);
+            }
+
+            @Override
+            public void connectorClose(SocketChannel channel) {
+                super.connectorClose(channel);
+                exitbySelf();
+            }
+        };
+        connector.setup(socket);
+
         //构建selector 设置状态
         Selector write = Selector.open();
         socket.register(write, SelectionKey.OP_WRITE);
-        //传入线程 readSelector
-        Selector readSelector = Selector.open();
-        socket.register(readSelector,SelectionKey.OP_READ);
 
-        //socket 读流程
-        clientReadHandler = new ClientReadHandler(readSelector);
         //socket写流程
         writeHandle = new ClientWriteHandle(write);
         //反馈线程
@@ -60,8 +71,8 @@ public class ClientHandler {
     }
 
     public void exit(){
+        CloseUtils.close(connector);
         //线程退出
-        clientReadHandler.exit();
         writeHandle.exit();
         //socket退出
         if (socket!=null) {
@@ -73,9 +84,6 @@ public class ClientHandler {
         writeHandle.send(str);
     }
 
-    public void readtoPrint(){
-        clientReadHandler.start();
-    }
 
     public void exitbySelf(){
         exit();

@@ -1,5 +1,6 @@
 package com.scoket.wz1.lib.clink.net.qiujuer.clink.core;
 
+import java.io.EOFException;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
@@ -17,14 +18,82 @@ public class IoArgs {
     //构建byteBuffer
     byte[] bytes=new byte[256];
     ByteBuffer buffer=ByteBuffer.wrap(bytes);
-    //send Byte 返回int
-    public int readByte(SocketChannel channel) throws IOException {
-         return channel.read(buffer);
+    //从byte里 哪里开始读数据
+
+    private int limit;
+
+    public int readFrom(byte[] bytes,int offset)
+    {
+        //吧形参的bytes read bytebuffer里
+        int size = Math.min(bytes.length - offset, buffer.remaining());
+        buffer.put(bytes,0,size);
+        //本次操作的 长度
+        return size;
+    }
+    //写到byte里去，从哪里开始写
+
+    public int writeTo(byte[] bytes,int offset)
+    {
+        //write bytebuffer里去
+        int size = Math.max(bytes.length - offset, buffer.remaining());
+        //这里是 写到 bytes里去
+        buffer.get(bytes,0,size);
+        return size;
+    }
+    //write Byte返回int
+
+    //从 socketCHannel 读取数据
+    public int readFrom(SocketChannel channel) throws IOException {
+        startWriting();
+
+        int bytesProduced =0;
+        while (buffer.hasRemaining())
+        {
+            int len = channel.read(buffer);
+            if (len<0)
+            {
+                //异常
+                throw new EOFException();
+            }
+            bytesProduced+=len;
+        }
+
+        finishWriting();
+
+        return bytesProduced;
     }
 
-    //write Byte返回int
-    public int writeByte(SocketChannel channel ) throws IOException {
-        return channel.write(buffer);
+    //写数据到 socketChannel里去
+    public int writeTo(SocketChannel channel ) throws IOException {
+            int byteProduced =0;
+            while (buffer.hasRemaining())
+            {
+                int len = channel.write(buffer);
+                if (len<0)
+                {
+                    throw new EOFException();
+                }
+                byteProduced+=len;
+            }
+
+        return byteProduced;
+    }
+
+    //设置limit大小
+    private void limit(int limit){
+        this.limit= limit;
+    }
+
+    //开始写入数据
+    public void startWriting(){
+        buffer.clear();
+        //限制大小limit
+        buffer.limit(limit);
+    }
+
+    //完成吸入数据
+    public void finishWriting(){
+        buffer.flip();
     }
 
     //形成buffer 字符串
@@ -32,9 +101,19 @@ public class IoArgs {
         return new String(buffer.array(),0,buffer.position());
     }
 
+    public void writeLenght(int total) {
+        buffer.putInt(total);
+    }
+
+    public int readLenght()
+    {
+        return buffer.getInt();
+    }
+
     //IoArgs 事件监听
    public interface IoArgsEventListener{
         void onStarted(IoArgs args);
         void onCompleted(IoArgs args);
+        void onError(Exception e);
     }
 }

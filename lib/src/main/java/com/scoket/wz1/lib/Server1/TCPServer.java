@@ -147,8 +147,6 @@ public class TCPServer {
                                 //客户端 ClientHandler 线程
                                 ClientHandler clientHandler = new ClientHandler(accept, this);
 
-                                //读取数据并打印
-                                clientHandler.readtoPrint();
                                 synchronized (TCPServer.this) {
                                     handlerList.add(clientHandler);
                                 }

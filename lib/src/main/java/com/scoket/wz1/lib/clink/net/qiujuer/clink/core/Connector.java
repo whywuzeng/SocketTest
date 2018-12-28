@@ -1,5 +1,11 @@
 package com.scoket.wz1.lib.clink.net.qiujuer.clink.core;
 
+import com.scoket.wz1.lib.clink.net.qiujuer.clink.Impl.IoSelectAdapter;
+import com.scoket.wz1.lib.clink.net.qiujuer.clink.box.StringReceviePacket;
+import com.scoket.wz1.lib.clink.net.qiujuer.clink.box.StringSendPacket;
+
+import java.io.Closeable;
+import java.io.IOException;
 import java.nio.channels.SocketChannel;
 import java.util.UUID;
 
@@ -10,13 +16,105 @@ import java.util.UUID;
  * <p>
  * com.scoket.wz1.lib.clink.net.qiujuer.clink.core
  */
-public class Connector {
+public class Connector implements IoSelectAdapter.ConnectorChannel,Closeable {
 
     private UUID key=UUID.randomUUID();
+    private IoSelectAdapter ioSelectAdapter;
+    private SendDispatcher mSendDispatcher;
+    private RecevieDispatcher mRecevieDispatcher;
+
 
     //配置启动 channel
-    public void setup(SocketChannel channel){
+    public void setup(SocketChannel channel) throws IOException {
+        IoContext build = IoContext.getInstance();
 
+        ioSelectAdapter = new IoSelectAdapter(this,build.getIoProvider(),channel);
+        channel.configureBlocking(false);
+
+        try {
+            receiveAsync();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void send(String msg){
+        SendPacket sendPacket = new StringSendPacket();
+        mSendDispatcher.start(sendPacket);
+    }
+
+    public boolean receiveNewMessage(String s){
+        try {
+          return receiveAsync();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    public boolean receiveAsync() throws Exception {
+        return ioSelectAdapter.receiveAsync(new receiveEventListener());
+    }
+
+    public boolean sendAsync() throws Exception {
+        return ioSelectAdapter.receiveAsync(new sendEventListener());
+    }
+
+    @Override
+    public void connectorClose(SocketChannel channel) {
+
+    }
+
+    @Override
+    public void close() throws IOException {
+        ioSelectAdapter.close();
+    }
+
+    public class sendEventListener implements IoArgs.IoArgsEventListener{
+
+        @Override
+        public void onStarted(IoArgs args) {
+
+        }
+
+        @Override
+        public void onCompleted(IoArgs args) {
+
+        }
+
+        @Override
+        public void onError(Exception e) {
+
+        }
+    }
+
+    private  RecevieDispatcher.receviePacketCallBack callBack=new RecevieDispatcher.receviePacketCallBack() {
+        @Override
+        public void onReceviePacketCompleted(ReceviePacket packet) {
+            if (packet instanceof StringReceviePacket)
+            {
+                String data = ((StringReceviePacket) packet).string();
+                receiveNewMessage(data);
+            }
+        }
+    };
+
+    public class receiveEventListener implements IoArgs.IoArgsEventListener{
+
+        @Override
+        public void onStarted(IoArgs args) {
+
+        }
+
+        @Override
+        public void onCompleted(IoArgs args) {
+            receiveNewMessage(args.bufferString());
+        }
+
+        @Override
+        public void onError(Exception e) {
+
+        }
     }
 
 }

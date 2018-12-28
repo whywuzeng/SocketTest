@@ -17,9 +17,9 @@ public interface IoProvider extends Closeable{
     //注册output
     boolean outputRegister(SocketChannel channel,handleOutputCallback callback);
     //取消注册input
-    void unregisterInput();
+    void unregisterInput(SocketChannel channel);
     //取消注册output
-    void unregisterOutput();
+    void unregisterOutput(SocketChannel channel);
 
     abstract class handleInputCallback implements Runnable {
 
