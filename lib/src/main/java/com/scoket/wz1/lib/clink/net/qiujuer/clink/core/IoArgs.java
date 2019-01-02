@@ -22,6 +22,8 @@ public class IoArgs {
 
     private int limit;
 
+    private int cap;
+
     public int readFrom(byte[] bytes,int offset)
     {
         //吧形参的bytes read bytebuffer里
@@ -47,6 +49,7 @@ public class IoArgs {
         startWriting();
 
         int bytesProduced =0;
+        //返回是否还有未读内容
         while (buffer.hasRemaining())
         {
             int len = channel.read(buffer);
@@ -80,7 +83,7 @@ public class IoArgs {
     }
 
     //设置limit大小
-    private void limit(int limit){
+    public void limit(int limit){
         this.limit= limit;
     }
 
@@ -105,9 +108,14 @@ public class IoArgs {
         buffer.putInt(total);
     }
 
+    //读出 首包长度
     public int readLenght()
     {
         return buffer.getInt();
+    }
+
+    public int getCap() {
+        return bytes.length;
     }
 
     //IoArgs 事件监听

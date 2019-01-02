@@ -11,5 +11,5 @@ import java.io.Closeable;
  */
 public interface Receiver extends Closeable{
     //接收异步的方法
-    boolean receiveAsync(IoArgs.IoArgsEventListener listener) throws Exception;
+    boolean receiveAsync(IoArgs ioArgs,IoArgs.IoArgsEventListener listener) throws Exception;
 }

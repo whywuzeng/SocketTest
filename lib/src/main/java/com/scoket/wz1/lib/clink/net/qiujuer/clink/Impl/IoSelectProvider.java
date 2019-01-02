@@ -70,8 +70,9 @@ public class IoSelectProvider implements IoProvider {
                         Iterator<SelectionKey> iterator = write.selectedKeys().iterator();
                         while (iterator.hasNext())
                         {
-                            if (iterator.next().isValid()) {
-                                handleSelection(iterator.next(),SelectionKey.OP_WRITE, outputMapRunable,outputPoolSelectProvider);
+                            SelectionKey key = iterator.next();
+                            if (key.isValid()) {
+                                handleSelection(key,SelectionKey.OP_WRITE, outputMapRunable,outputPoolSelectProvider);
                             }
                         }
 

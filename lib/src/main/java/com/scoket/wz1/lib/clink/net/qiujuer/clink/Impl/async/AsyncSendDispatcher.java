@@ -1,7 +1,6 @@
 package com.scoket.wz1.lib.clink.net.qiujuer.clink.Impl.async;
 
 import com.scoket.wz1.lib.clink.net.qiujuer.clink.core.IoArgs;
-import com.scoket.wz1.lib.clink.net.qiujuer.clink.core.Packet;
 import com.scoket.wz1.lib.clink.net.qiujuer.clink.core.Send;
 import com.scoket.wz1.lib.clink.net.qiujuer.clink.core.SendDispatcher;
 import com.scoket.wz1.lib.clink.net.qiujuer.clink.core.SendPacket;
@@ -33,7 +32,6 @@ public class AsyncSendDispatcher implements SendDispatcher {
 
     public AsyncSendDispatcher(Send send) {
         this.mSend=send;
-        
     }
 
     /**
@@ -52,7 +50,7 @@ public class AsyncSendDispatcher implements SendDispatcher {
 
     private void sendNestMsg() {
 
-        SendPacket packet= tmpPacket;
+        SendPacket packet= tmpPacket = takePacket();
         if (packet!=null)
         {
             //那packet来拆包，来发送
@@ -61,7 +59,6 @@ public class AsyncSendDispatcher implements SendDispatcher {
             CloseUtils.close(packet);
         }
 
-        SendPacket packet= tmpPacket = takePacket();
         if (packet==null)
         {
             //队列是取完了
@@ -70,6 +67,7 @@ public class AsyncSendDispatcher implements SendDispatcher {
         }
 
         total=packet.getLenght();
+        mIoArgs.limit(total+1);
         position=0;
         sendCurrentPacket();
     }
@@ -95,7 +93,7 @@ public class AsyncSendDispatcher implements SendDispatcher {
         ioArgs.finishWriting();
 
         try {
-            mSend.sendAsync(mListener);
+            mSend.sendAsync(ioArgs,mListener);
         } catch (Exception e) {
            closeAndNotify();
         }
@@ -110,7 +108,9 @@ public class AsyncSendDispatcher implements SendDispatcher {
 
     }
 
+    //监听IoArgs 转换
     private IoArgs.IoArgsEventListener mListener =new IoArgs.IoArgsEventListener() {
+        //线程池 写到通道里 channel 开始.
         @Override
         public void onStarted(IoArgs args) {
 

@@ -23,21 +23,43 @@ public interface IoProvider extends Closeable{
 
     abstract class handleInputCallback implements Runnable {
 
-        @Override
-        public void run() {
-            canProviderInput();
+        protected Object attach;
+
+        public final  <T> T getAttach() {
+            T mAttach=  (T)this.attach;
+            return mAttach;
+        }
+        public void setAttach(Object attach) {
+            this.attach = attach;
         }
 
-        protected abstract void canProviderInput();
+        @Override
+        public void run() {
+            canProviderInput(attach);
+        }
+
+        protected abstract void canProviderInput(Object args);
     }
 
     abstract class handleOutputCallback implements Runnable{
-        @Override
-        public void run() {
-            canProviderOutput();
+
+        protected Object attach;
+
+        public final  <T> T getAttach() {
+          T mAttach=  (T)this.attach;
+          return mAttach;
         }
 
-        protected abstract void canProviderOutput();
+        public void setAttach(Object attach) {
+            this.attach = attach;
+        }
+
+        @Override
+        public void run() {
+            canProviderOutput(attach);
+        }
+
+        protected abstract void canProviderOutput(Object attach);
     }
 
 }

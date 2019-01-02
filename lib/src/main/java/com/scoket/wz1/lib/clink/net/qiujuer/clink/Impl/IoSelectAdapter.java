@@ -44,21 +44,27 @@ public class IoSelectAdapter implements Send,Receiver,Closeable{
     }
 
     @Override
-    public boolean receiveAsync(IoArgs.IoArgsEventListener listener) throws Exception {
+    public boolean receiveAsync(IoArgs ioArgs,IoArgs.IoArgsEventListener listener) throws Exception {
         if (isClose.get())
         {
             throw new Exception("channel is close");
         }
-      return provider.inputRegister(channel,new receiveHandleInputCallback(channel,listener));
+        receiveHandleInputCallback callback = new receiveHandleInputCallback(channel, listener);
+        callback.setAttach(ioArgs);
+
+        return provider.inputRegister(channel,callback);
     }
 
     @Override
-    public boolean sendAsync(IoArgs.IoArgsEventListener listener) throws Exception {
+    public boolean sendAsync(IoArgs ioArgs, IoArgs.IoArgsEventListener listener) throws Exception {
         if (isClose.get())
         {
             throw new Exception("channel is close");
         }
-        return provider.outputRegister(channel,new sendHandleOutputBack(channel,listener));
+        sendHandleOutputBack mhandleOutput = new sendHandleOutputBack(channel, listener);
+        mhandleOutput.setAttach(ioArgs);
+
+        return provider.outputRegister(channel,mhandleOutput);
     }
 
     static class receiveHandleInputCallback extends IoProvider.handleInputCallback{
@@ -72,16 +78,15 @@ public class IoSelectAdapter implements Send,Receiver,Closeable{
         }
 
         @Override
-        protected void canProviderInput() {
+        protected void canProviderInput(Object args) {
 
             try {
-
-            IoArgs ioArgs = new IoArgs();
+            IoArgs ioArgs= getAttach();
             if (listener!=null)
             {
                 listener.onStarted(ioArgs);
             }
-            int i = ioArgs.readByte(channel);
+            int i = ioArgs.readFrom(channel);
             if (i<0)
             {
                 listener.onError(new Exception("readByte < 0,channel 传送链接失败"));
@@ -110,18 +115,22 @@ public class IoSelectAdapter implements Send,Receiver,Closeable{
             this.listener=listener;
         }
 
+        public void setAttach(Object attach)
+        {
+            this.attach =attach;
+        }
+
         @Override
-        protected void canProviderOutput() {
+        protected void canProviderOutput(Object attach) {
 
             try {
-
-            IoArgs ioArgs = new IoArgs();
+                IoArgs ioArgs = getAttach();
             if (listener!=null)
             {
                 listener.onStarted(ioArgs);
             }
 
-            int i = ioArgs.writeByte(channel);
+            int i = ioArgs.writeTo(channel);
             if (i<0)
             {
                 listener.onError(new Exception("writeByte < 0,channel 传送链接失败"));

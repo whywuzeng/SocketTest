@@ -11,5 +11,5 @@ import java.io.Closeable;
  */
 public interface Send extends Closeable{
 
-    boolean sendAsync(IoArgs.IoArgsEventListener listener) throws Exception;
+    boolean sendAsync(IoArgs ioArgs, IoArgs.IoArgsEventListener listener) throws Exception;
 }

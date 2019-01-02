@@ -15,7 +15,7 @@ public class StringSendPacket extends SendPacket{
 
     private byte[] bytes;
 
-    public void getStringPacket(String msg){
+    public  StringSendPacket(String msg){
         bytes = msg.getBytes();
         lenght=bytes.length;
     }

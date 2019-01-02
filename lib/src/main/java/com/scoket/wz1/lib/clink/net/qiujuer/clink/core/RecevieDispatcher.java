@@ -1,5 +1,7 @@
 package com.scoket.wz1.lib.clink.net.qiujuer.clink.core;
 
+import java.io.Closeable;
+
 /**
  * Created by Administrator on 2018-12-28.
  * <p>
@@ -9,7 +11,7 @@ package com.scoket.wz1.lib.clink.net.qiujuer.clink.core;
  * <p>
  * com.scoket.wz1.lib.clink.net.qiujuer.clink.core
  */
-public interface RecevieDispatcher {
+public interface RecevieDispatcher extends Closeable{
     void start();
 
     void stop();

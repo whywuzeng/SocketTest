@@ -1,6 +1,8 @@
 package com.scoket.wz1.lib.clink.net.qiujuer.clink.core;
 
 import com.scoket.wz1.lib.clink.net.qiujuer.clink.Impl.IoSelectAdapter;
+import com.scoket.wz1.lib.clink.net.qiujuer.clink.Impl.async.AsyncRecevieDispatcher;
+import com.scoket.wz1.lib.clink.net.qiujuer.clink.Impl.async.AsyncSendDispatcher;
 import com.scoket.wz1.lib.clink.net.qiujuer.clink.box.StringReceviePacket;
 import com.scoket.wz1.lib.clink.net.qiujuer.clink.box.StringSendPacket;
 
@@ -31,33 +33,20 @@ public class Connector implements IoSelectAdapter.ConnectorChannel,Closeable {
         ioSelectAdapter = new IoSelectAdapter(this,build.getIoProvider(),channel);
         channel.configureBlocking(false);
 
-        try {
-            receiveAsync();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        mSendDispatcher=new AsyncSendDispatcher(ioSelectAdapter);
+        mRecevieDispatcher=new AsyncRecevieDispatcher(callBack,ioSelectAdapter);
+        mRecevieDispatcher.start();
     }
 
-    public void send(String msg){
-        SendPacket sendPacket = new StringSendPacket();
-        mSendDispatcher.start(sendPacket);
-    }
+    protected boolean receiveNewMessage(String data) {
 
-    public boolean receiveNewMessage(String s){
-        try {
-          return receiveAsync();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
         return false;
     }
 
-    public boolean receiveAsync() throws Exception {
-        return ioSelectAdapter.receiveAsync(new receiveEventListener());
-    }
-
-    public boolean sendAsync() throws Exception {
-        return ioSelectAdapter.receiveAsync(new sendEventListener());
+    public void send(String msg){
+        SendPacket sendPacket = new StringSendPacket(msg);
+        //启动调度了
+        mSendDispatcher.start(sendPacket);
     }
 
     @Override
@@ -70,51 +59,16 @@ public class Connector implements IoSelectAdapter.ConnectorChannel,Closeable {
         ioSelectAdapter.close();
     }
 
-    public class sendEventListener implements IoArgs.IoArgsEventListener{
-
-        @Override
-        public void onStarted(IoArgs args) {
-
-        }
-
-        @Override
-        public void onCompleted(IoArgs args) {
-
-        }
-
-        @Override
-        public void onError(Exception e) {
-
-        }
-    }
-
     private  RecevieDispatcher.receviePacketCallBack callBack=new RecevieDispatcher.receviePacketCallBack() {
         @Override
         public void onReceviePacketCompleted(ReceviePacket packet) {
             if (packet instanceof StringReceviePacket)
             {
                 String data = ((StringReceviePacket) packet).string();
+                System.out.println("连接唯一UID="+key+"-------接收到的信息:"+data);
                 receiveNewMessage(data);
             }
         }
     };
-
-    public class receiveEventListener implements IoArgs.IoArgsEventListener{
-
-        @Override
-        public void onStarted(IoArgs args) {
-
-        }
-
-        @Override
-        public void onCompleted(IoArgs args) {
-            receiveNewMessage(args.bufferString());
-        }
-
-        @Override
-        public void onError(Exception e) {
-
-        }
-    }
 
 }
